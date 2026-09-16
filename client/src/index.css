@@ -1,0 +1,219 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Design tokens — docs/research/DIRECTION.md, direction A ("Paper Command")
+   for the palette, direction B ("Cool Console") for layout conventions.
+
+   Two border tokens, not one: `--color-border` is a decorative divider
+   (~1.3:1, fine — WCAG 1.4.11's 3:1 only applies to boundaries that carry
+   function) and `--color-border-strong` is for anything interactive
+   (inputs, buttons, checkboxes, focus rings), verified >=3:1 against both
+   `--color-page` and `--color-surface` in both themes below.
+
+   The dark theme redefines only these token VALUES. No component rule
+   should ever key off [data-theme="dark"] directly.
+   ========================================================================== */
+:root {
+  --color-page: #FAF9F6;
+  --color-surface: #FFFFFF;
+  --color-border: #E4E1D8;
+  --color-border-strong: #8A8578;
+  --color-text: #1C1B18;
+  --color-text-muted: #6B675E;
+  --color-accent: #1E3A8A;
+  /* Text/icon colour for anything painted on a solid accent or status
+     fill. White on this theme's accent clears 10.36:1; kept as a token
+     (not a hardcoded `text-white`) because dark mode needs the opposite. */
+  --color-text-on-solid: #FFFFFF;
+
+  --status-normal: #2F6B3A;
+  --status-warning: #A15C00;
+  --status-urgent: #B5461A;
+  --status-critical: #A3211D;
+}
+
+/* Sourced from GitHub Primer's dark theme (github.com/primer/primitives) —
+   a shipped, independently-tested-for-contrast dark palette, rather than a
+   hand-tuned guess. Every value re-verified against this app's own
+   --color-page/--color-surface below before landing here (see the commit's
+   token table). Note --color-text-on-solid flips to a dark colour: white
+   text fails on all five of this theme's fills (contrast 2.5-3.4:1). */
+[data-theme="dark"] {
+  --color-page: #0D1117;
+  --color-surface: #161B22;
+  --color-border: #30363D;
+  --color-border-strong: #6E7681;
+  --color-text: #E6EDF3;
+  --color-text-muted: #8B949E;
+  --color-accent: #58A6FF;
+  --color-text-on-solid: #0D1117;
+
+  --status-normal: #3FB950;
+  --status-warning: #D29922;
+  --status-urgent: #DB6D28;
+  --status-critical: #F85149;
+}
+
+html {
+  background: var(--color-page);
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-text);
+}
+
+/* ==========================================================================
+   Leaflet basemap
+   ========================================================================== */
+.leaflet-container {
+  background: var(--color-page);
+  font-family: inherit;
+}
+/* No tile filter. A `filter: invert()` on tile output re-tints every road,
+   waterway and vegetation pixel to a false colour on every pan and zoom —
+   wrong information, not styling. RapidMap.jsx now requests a genuine light
+   basemap (CARTO Positron) by default and a genuine dark basemap
+   (CARTO Dark Matter) under [data-theme="dark"], so no filter is needed in
+   either theme. */
+
+/* ==========================================================================
+   Status encoding primitives (Cool Console convention: a small dot plus a
+   text label inside the row, never a full-row colour wash). These are new
+   utility classes, not yet wired into any screen — adopting them in
+   Fleet/Incidents/the map's popups is component work for a follow-up pass.
+   Built here so that pass has tokens to reach for instead of new hex.
+
+   Per DIRECTION.md §3: colour is never the only channel. --filled always
+   carries more visual weight than --outline (bold text, solid fill vs.
+   tinted background), so severity survives on shape/weight even when hue
+   is hard to read. */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot--normal   { background: var(--status-normal); }
+.status-dot--warning  { background: var(--status-warning); }
+.status-dot--urgent   { background: var(--status-urgent); }
+.status-dot--critical { background: var(--status-critical); border-radius: 2px; } /* shape change, not just colour */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.status-badge--normal.status-badge--outline   { color: var(--status-normal);   border-color: var(--status-normal);   background: color-mix(in srgb, var(--status-normal) 10%, var(--color-surface)); }
+.status-badge--warning.status-badge--outline  { color: var(--status-warning);  border-color: var(--status-warning);  background: color-mix(in srgb, var(--status-warning) 10%, var(--color-surface)); }
+.status-badge--urgent.status-badge--outline   { color: var(--status-urgent);   border-color: var(--status-urgent);   background: color-mix(in srgb, var(--status-urgent) 10%, var(--color-surface)); }
+.status-badge--critical.status-badge--outline { color: var(--status-critical); border-color: var(--status-critical); background: color-mix(in srgb, var(--status-critical) 10%, var(--color-surface)); }
+.status-badge--normal.status-badge--filled    { background: var(--status-normal);   color: var(--color-text-on-solid); }
+.status-badge--warning.status-badge--filled   { background: var(--status-warning);  color: var(--color-text-on-solid); }
+.status-badge--urgent.status-badge--filled    { background: var(--status-urgent);   color: var(--color-text-on-solid); }
+.status-badge--critical.status-badge--filled  { background: var(--status-critical); color: var(--color-text-on-solid); font-weight: 700; }
+
+/* ==========================================================================
+   Camera feed mode — keep the information, drop the costume. The camera
+   really is in a different mode; that no longer needs a hue-rotated
+   picture, a moving scanline, or corner text to say so. A plain static
+   label above the feed carries the same fact.
+   ========================================================================== */
+.night-vision-feed,
+.thermal-vision-feed {
+  position: relative;
+}
+.night-vision-feed::before,
+.thermal-vision-feed::before {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--color-text-on-solid);
+}
+.night-vision-feed::before {
+  content: "NIGHT VISION";
+  background: var(--status-normal);
+}
+.thermal-vision-feed::before {
+  content: "THERMAL (MOCK)";
+  background: var(--status-urgent);
+}
+
+/* ==========================================================================
+   Battery tiers — real thresholds, re-pointed at semantic tokens.
+   ========================================================================== */
+.battery-green  { color: var(--status-normal); }
+.battery-yellow { color: var(--status-warning); }
+.battery-orange { color: var(--status-urgent); }
+.battery-red    { color: var(--status-critical); }
+
+/* ==========================================================================
+   Reduced motion — global guard. Tailwind's own animate-ping/pulse/bounce/
+   spin utilities (used for the two survivors below, plus loading skeletons
+   and a couple of remaining status pulses in page components not touched
+   in this pass) ship with no prefers-reduced-motion handling out of the
+   box. This is the one rule that has to be global rather than per-class,
+   since new usages of those utilities inherit the guard for free.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-ping,
+  .animate-bounce,
+  .animate-spin {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Animation budget. Two categories survive, both carrying information a
+   static state can't: an active-transmission indicator (push-to-talk,
+   below) and a live-telemetry heartbeat (the two small dots in App.jsx's
+   sidebar and TopCommandBar.jsx — "this count is still live right now").
+   Everything that was pure costume is gone outright: a radar ping on every
+   base marker, a ping+pulse on every incident marker regardless of
+   severity, a dashed-route flow, a recording blink, a return-to-base
+   flash. Severity/state now reads from label + icon + fill weight + shape
+   + sort order instead (see utils.js and RapidMap.jsx). Loading skeletons
+   (Skeleton.jsx) keep their pulse — a bounded, transient loading indicator
+   is a different thing from a decorative loop that runs forever.
+   ========================================================================== */
+@keyframes ptt-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(163, 33, 29, 0.35); }
+  50%       { box-shadow: 0 0 16px rgba(163, 33, 29, 0.55); }
+}
+.ptt-transmitting {
+  animation: ptt-pulse 0.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ptt-transmitting {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Fleet decision engine label
+   ========================================================================== */
+.fleet-engine-label {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
